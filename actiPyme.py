@@ -36,7 +36,22 @@ class Driver(object):
     def Start(self):
         requrl=self.Target
         requrl+="/users/me"
-        MyIdReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+        try:
+            MyIdReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw),timeout=3)
+            MyIdReq.raise_for_status()   
+        except requests.exceptions.HTTPError as errh:
+            print ("Http Error:",errh)
+            sys.exit(1)
+        except requests.exceptions.ConnectionError as errc:
+            print ("Error Connecting:",errc)
+            sys.exit(1)
+        except requests.exceptions.Timeout as errt:
+            print ("Timeout Error:",errt)
+            sys.exit(1)
+        except requests.exceptions.RequestException as err:
+            print ("Oops: Something Else",err)
+            sys.exit(1)
+        
         IdData=json.loads(MyIdReq.text)
         self.IdNumber=IdData['id']
         self.IdName=IdData['firstName']
@@ -69,7 +84,6 @@ class Driver(object):
         """
 
         MethodDict={1: "ByName", 2: "ByIds", 3: "ByCustomerIds", 4: "ByProjectIds"}
-
         if self.IsStarted:
             #switch on the dictionary   
             SrcMethTok=MethodDict.get(SearchMethod,"err")
@@ -86,11 +100,50 @@ class Driver(object):
                 SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
                 SrcResult=json.loads(SrcReq.text)
             elif SrcMethTok=="ByCustomerIds":
+                #Here we look for a customer ID
                 requrl=self.Target+"/tasks?offset=0&customerIds="+SearchArgument
                 SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
                 SrcResult=json.loads(SrcReq.text)
             elif SrcMethTok=="ByProjectIds":
+                #Here we look for a project ID
                 requrl=self.Target+"/tasks?offset=0&projectIds="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            else:
+                raise ValueError('Inappropriate or bad search method')    
+        else:
+            SrcResult=False
+
+        return SrcResult
+
+    def SearchProjects(self, SearchMethod: int,SearchArgument: str):
+        """ 
+            Name: actiPyme.Driver.SearchProjects(SearchMethod: str, SearchArgument: str)
+
+            Args:   SearchMethod, specify how you want to search: 1 - By Name; 2 - By task id; 3 - By customer id; 
+                    SearchArgument, what you want to search as string
+
+            Desc: This function lets you search for a task inside the actitime database. The output is a JSON object
+        """
+        MethodDict={1: "ByName", 2: "ByIds", 3: "ByCustomerIds"}
+        if self.IsStarted:
+            #switch on the dictionary   
+            SrcMethTok=MethodDict.get(SearchMethod,"err")
+            if SrcMethTok=="err":
+                raise ValueError('Inappropriate or bad search method')
+            elif SrcMethTok=="ByName":
+                #Here we look for a name
+                requrl=self.Target+"/projects?offset=0&words="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            elif SrcMethTok=="ByIds":
+                #Here we look for a project ID
+                requrl=self.Target+"/projects?offset=0&ids="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            elif SrcMethTok=="ByCustomerIds":
+                #Here we look for a customer ID
+                requrl=self.Target+"/projects?offset=0&customerIds="+SearchArgument
                 SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
                 SrcResult=json.loads(SrcReq.text)
             else:
@@ -152,3 +205,20 @@ class Driver(object):
             TtrackData=False
 
         return TtrackData
+
+    def GetTaskInfo(self, TaskId:int):
+        """ 
+            Name: actiPyme.Driver.GetTaskInfo(self, TaskId:int)
+
+            Args:   TaskId, the ID number of the task 
+
+            Desc: This function returns the info and the properties of a task. The output is a JSON object
+        """
+        if  self.IsStarted: 
+            requrl=self.Target+"/tasks/"+str(TaskId)
+            TaskInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            TaskInfo=json.loads(TaskInfoReq.text)   
+        else:
+            TaskInfo=False
+
+        return TaskInfo
