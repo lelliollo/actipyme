@@ -34,6 +34,13 @@ class Driver(object):
 
 
     def Start(self):
+        """ 
+            Name: actiPyme.Driver.Start()
+
+            Args:  Void
+
+            Desc: This method starts up the driver. Handshake is performed by means of user self identification.
+        """        
         requrl=self.Target
         requrl+="/users/me"
         try:
@@ -58,10 +65,27 @@ class Driver(object):
         self.IdSurname=IdData['lastName']
         self.IsStarted=True
 
+    def Stop(self):
+        """ 
+            Name: actiPyme.Driver.Stop()
+
+            Args:  Void
+
+            Desc: This method shuts down the driver. Useful to re initialize the communication.
+        """   
+        self.IdNumber=""
+        self.IdName=""
+        self.IdSurname=""
+        self.IsStarted=False
+
+
     def CustomerList(self):
         """ 
-            Just get the customers list.
-            Json object as output
+            Name: actiPyme.Driver.CustomerList()
+
+            Args:  Void
+
+            Desc: Simply get the info about the customers. The output is a JSON object
         """
         if  self.IsStarted:   
             requrl=self.Target
@@ -69,9 +93,29 @@ class Driver(object):
             CustReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
             Clients=json.loads(CustReq.text)
         else:
-            Clients="Communication not initialized. Execute the Start command"
+            Clients={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
         
         return Clients
+
+    def LeaveTypesList(self):
+        """ 
+            Name: actiPyme.Driver.LeaveTypesList()
+
+            Args:  Void
+
+            Desc: Simply get the info about the leave types. The output is a JSON object
+        """
+        if  self.IsStarted:   
+            requrl=self.Target
+            requrl+="/leaveTypes"
+            CustReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            Leaves=json.loads(CustReq.text)
+        else:
+            Leaves={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+        
+        return Leaves
 
     def SearchTasks(self,SearchMethod: int,SearchArgument: str):
         """ 
@@ -88,7 +132,8 @@ class Driver(object):
             #switch on the dictionary   
             SrcMethTok=MethodDict.get(SearchMethod,"err")
             if SrcMethTok=="err":
-                raise ValueError('Inappropriate or bad search method')
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')
             elif SrcMethTok=="ByName":
                 #Here we look for a name
                 requrl=self.Target+"/tasks?offset=0&words="+SearchArgument
@@ -110,9 +155,11 @@ class Driver(object):
                 SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
                 SrcResult=json.loads(SrcReq.text)
             else:
-                raise ValueError('Inappropriate or bad search method')    
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')    
         else:
-            SrcResult=False
+            SrcResult={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
 
         return SrcResult
 
@@ -130,7 +177,8 @@ class Driver(object):
             #switch on the dictionary   
             SrcMethTok=MethodDict.get(SearchMethod,"err")
             if SrcMethTok=="err":
-                raise ValueError('Inappropriate or bad search method')
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')
             elif SrcMethTok=="ByName":
                 #Here we look for a name
                 requrl=self.Target+"/projects?offset=0&words="+SearchArgument
@@ -147,9 +195,11 @@ class Driver(object):
                 SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
                 SrcResult=json.loads(SrcReq.text)
             else:
-                raise ValueError('Inappropriate or bad search method')    
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')    
         else:
-            SrcResult=False
+            SrcResult={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
 
         return SrcResult
 
@@ -174,7 +224,8 @@ class Driver(object):
             TtrackReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
             TtrackData=json.loads(TtrackReq.text)   
         else:
-            TtrackData=False
+            TtrackData={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
 
         return TtrackData
 
@@ -202,7 +253,8 @@ class Driver(object):
             WtReq=requests.patch(requrl,headers=self.writeDefheaders,data=dataToWrite,auth=(self.actitimeUserName,self.actitimePsw))
             TtrackData=json.loads(WtReq.text)    
         else:
-            TtrackData=False
+            TtrackData={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
 
         return TtrackData
 
@@ -219,6 +271,124 @@ class Driver(object):
             TaskInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
             TaskInfo=json.loads(TaskInfoReq.text)   
         else:
-            TaskInfo=False
+            TaskInfo={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
 
         return TaskInfo
+
+    def GetActiTimeInfo(self):
+        """ 
+            Name: actiPyme.Driver.GetActiTimeInfo()
+
+            Args:  Void
+
+            Desc: Simply get the info about the actitime installation. The output is a JSON object
+        """
+        if  self.IsStarted: 
+            requrl=self.Target+"/info/"
+            ActiInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            ActiInfo=json.loads(ActiInfoReq.text)   
+        else:
+            ActiInfo={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+        return ActiInfo
+    
+    def DepartmentList(self):
+        """ 
+            Name: actiPyme.Driver.DepartmentList()
+
+            Args:  Void
+
+            Desc: Simply get the list of all departments. The output is a JSON object
+        """
+        if  self.IsStarted: 
+            requrl=self.Target+"/departments/"
+            DepInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            DepInfo=json.loads(DepInfoReq.text)   
+        else:
+            DepInfo={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+
+        return DepInfo
+
+    def GetDepartmentInfo(self,DepartmentId: int):
+        """ 
+            Name: actiPyme.Driver.GetDepartmentInfo(self,DepartmentId: int)
+
+            Args:  DepartmentId, identification number of department
+
+            Desc: get the info of one department. The output is a JSON object
+        """
+        if  self.IsStarted: 
+            requrl=self.Target+"/departments/"+str(DepartmentId)
+            DepInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            DepInfo=json.loads(DepInfoReq.text)   
+        else:
+            DepInfo={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+
+        return DepInfo
+
+    def GetProjectInfo(self, ProjectId: int):
+        """ 
+            Name: actiPyme.Driver.GetProjectInfo(self, ProjectId: int)
+
+            Args:  ProjectId, identification number of the project
+
+            Desc: get the info of one project. The output is a JSON object
+        """
+        if  self.IsStarted: 
+            requrl=self.Target+"/projects/"+str(ProjectId)
+            ProjInfoReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            ProjInfo=json.loads(ProjInfoReq.text)   
+        else:
+            ProjInfo={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+
+        return ProjInfo
+
+    def SearchUsers(self, SearchMethod: int,SearchArgument: str):
+        """ 
+            Name: actiPyme.Driver.SearchUsers(SearchMethod: str, SearchArgument: str)
+
+            Args:   SearchMethod, specify how you want to search: 1 - By Full Name; 2 - By user Id; 3 - By department; 4 - By email; 
+                    SearchArgument, what you want to search as string
+
+            Desc: This function lets you search for a task inside the actitime database. The output is a JSON object
+        """
+        MethodDict={1: "ByFullName", 2: "ByIds", 3: "ByDepartment", 4: "ByEmail"}
+        if self.IsStarted:
+            #switch on the dictionary   
+            SrcMethTok=MethodDict.get(SearchMethod,"err")
+            if SrcMethTok=="err":
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')
+            elif SrcMethTok=="ByFullName":
+                #Here we look for a full name
+                requrl=self.Target+"/users?offset=0&name="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            elif SrcMethTok=="ByIds":
+                #Here we look for a user ID
+                requrl=self.Target+"/users?offset=0&ids="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            elif SrcMethTok=="ByDepartment":
+                #Here we look for a department
+                requrl=self.Target+"/users?offset=0&department="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            elif SrcMethTok=="ByEmail":
+                #Here we look for an email addresss
+                requrl=self.Target+"/users?offset=0&email="+SearchArgument
+                SrcReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+                SrcResult=json.loads(SrcReq.text)
+            else:
+                SrcResult={}
+                raise Exception('Inappropriate or bad search method')    
+        else:
+            SrcResult={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+
+        return SrcResult
+    
