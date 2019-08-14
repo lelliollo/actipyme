@@ -31,7 +31,9 @@ class Driver(object):
         self.IsStarted=False
         self.ServerHeaders= {'accept': 'application/json; charset=UTF-8'}
         self.writeDefheaders={'accept': 'application/json; charset=UTF-8', 'Content-Type': 'application/json' }
-
+        self.IdNumber=0
+        self.IdName=""
+        self.IdSurname=""
 
     def Start(self):
         """ 
@@ -205,11 +207,12 @@ class Driver(object):
 
 
 
-    def GetDayTimeTrack(self, Year: int,Month: int,Day: int,TaskId:int):
+    def GetDayTimeTrack(self,usrIds: int, Year: int,Month: int,Day: int,TaskId:int):
         """ 
-            Name: actiPyme.Driver.GetDayTimeTrack(Year: int,Month: int,Day: int,TaskId:int)
+            Name: actiPyme.Driver.GetDayTimeTrack(self,usrIds: int, Year: int,Month: int,Day: int,TaskId:int)
 
-            Args:   Year, when you want to query timesheet data
+            Args:   usrIds, user number for which you want to read the time sheet
+                    Year, when you want to query timesheet data
                     Month, when you want to query timesheet data
                     Day, when you want to query timesheet data
                     TaskId, the identifier of the task (check actitime website)
@@ -220,7 +223,7 @@ class Driver(object):
         if  self.IsStarted: 
             assembler="-"
             dateQuery=assembler.join([str(Year),str(Month).zfill(2),str(Day).zfill(2)])
-            requrl=self.Target+"/timetrack/"+str(self.IdNumber)+"/"+dateQuery+"/"+str(TaskId)
+            requrl=self.Target+"/timetrack/"+str(usrIds)+"/"+dateQuery+"/"+str(TaskId)
             TtrackReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
             TtrackData=json.loads(TtrackReq.text)   
         else:
@@ -229,11 +232,12 @@ class Driver(object):
 
         return TtrackData
 
-    def WriteDayTimeTrack(self, Year: int,Month: int,Day: int,TaskId:int,TimeAsMinute: int,Comment: str):
+    def WriteDayTimeTrack(self,usrIds: int, Year: int,Month: int,Day: int,TaskId:int,TimeAsMinute: int,Comment: str):
         """ 
-            Name: actiPyme.Driver.WriteDayTimeTrack(Year: int,Month: int,Day: int,TaskId:int,TimeAsMinute: int,Comment: str)
+            Name: actiPyme.Driver.WriteDayTimeTrack(self,usrIds: int, Year: int,Month: int,Day: int,TaskId:int,TimeAsMinute: int,Comment: str)
 
-            Args:   Year, when you want to query timesheet data
+            Args:   usrIds, user number for which you want to write the time sheet
+                    Year, when you want to query timesheet data
                     Month, when you want to query timesheet data
                     Day, when you want to query timesheet data
                     TaskId, the identifier of the task (check actitime website)
@@ -246,7 +250,7 @@ class Driver(object):
         if  self.IsStarted:
             assembler="-"
             dateQuery=assembler.join([str(Year),str(Month).zfill(2),str(Day).zfill(2)])
-            requrl=self.Target+"/timetrack/"+str(self.IdNumber)+"/"+dateQuery+"/"+str(TaskId)
+            requrl=self.Target+"/timetrack/"+str(usrIds)+"/"+dateQuery+"/"+str(TaskId)
             #assemble data in json format
             dataToWrite= '{"time":' + str(TimeAsMinute) + ',"comment":"' + Comment + '"}'
             #finally write
@@ -392,3 +396,31 @@ class Driver(object):
 
         return SrcResult
     
+    def GetLeaveTime(self, UserId: int,YearFrom: int,MonthFrom: int,DayFrom: int,YearTo: int,MonthTo: int, DayTo: int):
+        """ 
+            Name: actiPyme.Driver.GetLeaveTime(self, UserId: int,YearFrom: int,MonthFrom: int,DayFrom: int,YearTo: int,MonthTo: int, DayTo: int)
+
+            Args:   userId, user number for which you want to read the time sheet
+                    YearFrom, start date you want to query timesheet data
+                    MonthFrom, start date want to query timesheet data
+                    DayFrom, start date want to query timesheet data
+                    YearTo, end date want to query timesheet data
+                    MonthTo, end date want to query timesheet data
+                    DayTo, end date want to query timesheet data
+
+            Desc: This function lets you query the data from actitime time sheet. The output is a JSON object
+
+        """
+
+        if  self.IsStarted: 
+            assembler="-"
+            dateFrom=assembler.join([str(YearFrom),str(MonthFrom).zfill(2),str(DayFrom).zfill(2)])
+            dateTo=assembler.join([str(YearTo),str(MonthTo).zfill(2),str(DayTo).zfill(2)])
+            requrl=self.Target+"/leavetime?userIds="+str(self.IdNumber)+"&dateFrom="+dateFrom+"&dateTo="+dateTo
+            LeaveReq=requests.get(requrl,headers=self.ServerHeaders,auth=(self.actitimeUserName,self.actitimePsw))
+            LeaveData=json.loads(LeaveReq.text)   
+        else:
+            LeaveData={}
+            raise Exception('Communication not initialized. Run the Start() command on the driver instance')
+
+        return LeaveData
