@@ -471,9 +471,9 @@ class AbfParser(object):
                 USERNAME;john.doe;
                 PASSWORD;FooBar18;
                 START TIMESHEET;
-                % format the timesheet as follows: year;month;day;task;hours;
-                2019;8;19;558;1;
-                2019;8;19;13619;7;
+                % format the timesheet as follows: year;month;day;task;minutes;
+                2019;8;19;558;180;
+                2019;8;19;13619;240;
                 END TIMESHEET;
                 END ENTRY;
                 %Here another entry
@@ -481,10 +481,10 @@ class AbfParser(object):
                 USERNAME;pippo.balera;
                 PASSWORD;ggghhhh;
                 START TIMESHEET;
-                2019;7;12;108;1;
-                2019;7;13;16509;7;
-                2019;8;1;21;4;
-                2019;8;3;009;3;
+                2019;7;12;108;100;
+                2019;7;13;16509;70;
+                2019;8;1;21;40;
+                2019;8;3;009;30;
                 END TIMESHEET;
                 END ENTRY;
     
@@ -509,10 +509,9 @@ class AbfParser(object):
                 ParsedRow.append(JustInp)
 
         #initialize the data structure
-        timeSheetTemplate={'year': 0,'month':0,'day': 0,'task':0,'hours':0}
+        timeSheetTemplate={'year': 0,'month':0,'day': 0,'task':0,'minutes':0}
         actiItem={'user':'','psw':'','timesheet': []}
         actiData=[]
-        timeSheetList=[]
         Nrows=len(ParsedRow)
         WorkRow=0
         EntryCounter=0
@@ -520,7 +519,6 @@ class AbfParser(object):
         while WorkRow<Nrows:
             Command=ParsedRow[WorkRow].split(';')
             if Command[0]=="START ENTRY":
-                actiData.append(actiItem)
                 # get username
                 WorkRow+=1
                 Command=ParsedRow[WorkRow].split(';')
@@ -540,9 +538,9 @@ class AbfParser(object):
                 Command=ParsedRow[WorkRow].split(';')
                 if Command[0]=="START TIMESHEET":
                     TimeSheetRowCounter=0
+                    timeSheetList=[]
                     while Command[0]!="END TIMESHEET":
                         WorkRow+=1
-                        
                         # put a limit to the while cycle
                         if TimeSheetRowCounter>self.TimeSheetRowLimit:
                             raise  ValueError("Too many time sheet rows or maybe something wrong in the formatting of input file. Check the existance of the END TIMESHEET tag")
@@ -554,7 +552,7 @@ class AbfParser(object):
                             timeSheetTemplate["month"]=int(Command[1])
                             timeSheetTemplate["day"]=int(Command[2])
                             timeSheetTemplate["task"]=int(Command[3])
-                            timeSheetTemplate["hours"]=int(Command[4])
+                            timeSheetTemplate["minutes"]=int(Command[4])
                             TimeSheetLineAsJsonStr=json.dumps(timeSheetTemplate)
                             timeSheetList[TimeSheetRowCounter]=json.loads(TimeSheetLineAsJsonStr)
                             TimeSheetRowCounter+=1
@@ -568,7 +566,8 @@ class AbfParser(object):
                 if Command[0]=="END ENTRY":
                     # dump the acti time entry in the output structure (JSON format)
                     actiDataAsJsonStr=json.dumps(actiItem)
-                    actiData[EntryCounter]=json.loads(actiDataAsJsonStr)
+                    actiDataAsJsonItem=json.loads(actiDataAsJsonStr)
+                    actiData.append(actiDataAsJsonItem)
                     EntryCounter+=1
 
             WorkRow+=1
